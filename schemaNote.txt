@@ -1,0 +1,94 @@
+// Represents a group of users
+model CarpoolGroup {
+  id          String   @id @default(cuid()) // primary key
+  message     String
+  users       User[]
+  dateCreated DateTime @default(now())
+
+  @@map(name: "group")
+}
+
+// Represents a User--need this for NextAuth and the data it stores.
+model User {
+  ...
+  seatAvail          Int           @default(0) @map("seat_avail")
+  ...
+}
+--------------------------
+After changing it:
+
+model CarpoolGroup {
+  id          String   @id @default(cuid())
+  message     String
+  users       User[]
+  seatAvail   Int      @default(0) // Seats available in this carpool
+  dateCreated DateTime @default(now())
+}
+
+
+Change 2
+Currently the user model has lots of location based fields
+
+model User {
+ ...
+  companyName        String        @default("") @map("company_name")
+  companyAddress     String        @default("") @map("company_address")
+  companyCoordLng    Float         @default(0) @map("company_coord_lng")
+  companyCoordLat    Float         @default(0) @map("company_coord_lat")
+  startAddress       String        @default("") @map("start_address")
+  startCoordLng      Float         @default(0) @map("start_coord_lng")
+  startCoordLat      Float         @default(0) @map("start_coord_lat")
+  companyPOIAddress  String        @default("") @map("company_poi_address")
+  companyPOICoordLng Float         @default(0) @map("company_poi_coord_lng")
+  companyPOICoordLat Float         @default(0) @map("company_poi_coord_lat")
+  startPOILocation   String        @default("") @map("start_poi_location")
+  startPOICoordLng   Float         @default(0) @map("start_poi_coord_lng")
+  startPOICoordLat   Float         @default(0) @map("start_poi_coord_lat")
+  ...
+}
+
+User model is very large already and with these extra fields makes it larger
+and harder to understand/ maybe even scale
+
+If many users work at Amazon or both live at International Village
+the previous schema is going to store this information countless times.
+We have so many kids in IV and if they are all looking for co-ops this is
+very redundant. 
+
+model UserLocation {
+  id          String   @id @default(cuid()) // Unique ID for each location
+  userId      String   // Links this location to a specific user
+  type        String   @default("company") // Type of location (e.g., "company", "start", "poi")
+  address     String   @default("")        // Address of the location
+  coordLng    Float    @default(0)         // Longitude
+  coordLat    Float    @default(0)         // Latitude
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateCreated DateTime @default(now())     // When the location was created
+}
+
+model User {
+  id        String          @id @default(cuid())
+  name      String?
+  email     String?         @unique
+  locations UserLocation[]  // A user can have multiple locations
+}
+
+--------------------------------------
+Now the user model only focuses on core user stuff such as email, role, requests, favorites, etc.
+
+Also it is more scalable if we were to add lets say dropoff address because two students meet up
+at one stop to be picked up to save time we would have to add 4 additional fields. With the new 
+schema we just add a new type dropoff address and add accordingly.
+
+its also reduced redudancy in the user table
+
+And its more flexible. If a student is still in the system and got a 2nd co-op that is at a
+location that is different than the first co-op. In the previous schema all the fields related
+to the co-op would have to change and if they moved from International Village to East Village
+that would change as well. With the new model added you can just change the location that is
+related to that user
+
+Side Note: The type could also be Oncampus user coords vs offcampus user coords
+
+
+git push -u origin main
