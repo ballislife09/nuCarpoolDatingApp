@@ -132,7 +132,17 @@ const CarpoolCard: React.FC = () => {
 
             {/* Tailwind: Similar card for destination */}
             <div className="bg-gray-50 rounded-lg p-4">
-              {/* ... similar structure ... */}
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-gray-600">Destination</span>
+                <span className="font-semibold text-gray-800">
+                  {currentMatch.endLocation}
+                </span>
+              </div>
+              <div className="flex items-center text-green-600">
+                <span className="text-sm">
+                  📍 {currentMatch.endDistanceDelta} miles away
+                </span>
+              </div>
             </div>
           </div>
 
